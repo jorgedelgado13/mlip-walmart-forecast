@@ -16,6 +16,7 @@ models/*.json
 # Data files
 data/raw/*.parquet
 data/raw/*.csv
+!data/raw/walmart_sample_raw.csv
 data/processed/*.parquet
 data/processed/*.csv
 
