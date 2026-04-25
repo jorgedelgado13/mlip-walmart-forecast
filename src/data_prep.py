@@ -7,25 +7,33 @@ PROCESSED_DIR = Path("data/processed")
 TRAIN_PATH = RAW_DIR / "train.csv"
 FEATURES_PATH = RAW_DIR / "features.csv"
 STORES_PATH = RAW_DIR / "stores.csv"
+SAMPLE_RAW_PATH = RAW_DIR / "walmart_sample_raw.csv"
 
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def load_inputs() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
-    """Carga train, features y stores."""
-    if not TRAIN_PATH.exists():
-        raise FileNotFoundError(f"No existe: {TRAIN_PATH}")
-    if not FEATURES_PATH.exists():
-        raise FileNotFoundError(f"No existe: {FEATURES_PATH}")
-    if not STORES_PATH.exists():
-        raise FileNotFoundError(f"No existe: {STORES_PATH}")
+def load_inputs():
+    """
+    Prioridad:
+    1. train/features/stores originales
+    2. sample raw pequeño versionado en el repo
+    """
+    if TRAIN_PATH.exists() and FEATURES_PATH.exists() and STORES_PATH.exists():
+        train = pd.read_csv(TRAIN_PATH, parse_dates=["Date"])
+        features = pd.read_csv(FEATURES_PATH, parse_dates=["Date"])
+        stores = pd.read_csv(STORES_PATH)
+        return "full", train, features, stores
 
-    train = pd.read_csv(TRAIN_PATH, parse_dates=["Date"])
-    features = pd.read_csv(FEATURES_PATH, parse_dates=["Date"])
-    stores = pd.read_csv(STORES_PATH)
+    if SAMPLE_RAW_PATH.exists():
+        sample = pd.read_csv(SAMPLE_RAW_PATH, parse_dates=["Date"])
+        return "sample", sample, None, None
 
-    return train, features, stores
+    raise FileNotFoundError(
+        f"No existen ni los archivos originales "
+        f"({TRAIN_PATH}, {FEATURES_PATH}, {STORES_PATH}) "
+        f"ni el sample versionado ({SAMPLE_RAW_PATH})."
+    )
 
 
 def merge_data(
@@ -72,10 +80,8 @@ def build_sample(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    # Filtrar tienda 1
     df = df[df["Store"] == 1].copy()
 
-    # Escoger 7 departamentos con más observaciones
     top_depts = (
         df.groupby("Dept")
         .size()
@@ -87,19 +93,15 @@ def build_sample(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df[df["Dept"].isin(top_depts)].copy()
 
-    # Crear id tipo "1_Dept"
     df["id"] = df["Store"].astype(str) + "_" + df["Dept"].astype(str)
 
-    # Imputación simple para markdowns
     markdown_cols = ["MarkDown1", "MarkDown2", "MarkDown3", "MarkDown4", "MarkDown5"]
     for col in markdown_cols:
         if col in df.columns:
             df[col] = df[col].fillna(0)
 
-    # Holiday a entero
     df["IsHoliday"] = df["IsHoliday"].astype(int)
 
-    # Ordenar
     df = df.sort_values(["Dept", "Date"]).reset_index(drop=True)
 
     return df
@@ -173,15 +175,31 @@ def print_summary(train, features, stores, merged, raw_sample, processed) -> Non
 
 
 def main():
-    train, features, stores = load_inputs()
-    merged = merge_data(train, features, stores)
-    validate_merged(merged)
+    source_type, a, b, c = load_inputs()
 
-    raw_sample = build_sample(merged)
-    processed = create_processed(raw_sample)
+    if source_type == "full":
+        train, features, stores = a, b, c
+        merged = merge_data(train, features, stores)
+        validate_merged(merged)
 
-    save_outputs(raw_sample, processed)
-    print_summary(train, features, stores, merged, raw_sample, processed)
+        raw_sample = build_sample(merged)
+        processed = create_processed(raw_sample)
+
+        save_outputs(raw_sample, processed)
+        print_summary(train, features, stores, merged, raw_sample, processed)
+
+    elif source_type == "sample":
+        raw_sample = a.copy()
+        processed = create_processed(raw_sample)
+        save_outputs(raw_sample, processed)
+
+        print("\n=== SAMPLE RAW ===")
+        print(raw_sample.shape)
+        print(raw_sample.head())
+
+        print("\n=== PROCESSED ===")
+        print(processed.shape)
+        print(processed.head())
 
     print("\n[OK] data_prep finalizado.")
     print("[OK] Archivos generados:")
