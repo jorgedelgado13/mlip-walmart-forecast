@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 
 MODELS_DIR = Path("models")
-TEST_PATH = MODELS_DIR / "test_ml_split.csv"
-FORECASTS_PATH = MODELS_DIR / "ml_quantile_forecasts.csv"
+TEST_PATH = MODELS_DIR / "test_stats_split.csv"
+FORECASTS_PATH = MODELS_DIR / "stats_forecasts.csv"
 
 
 def load_inputs() -> tuple[pd.DataFrame, pd.DataFrame]:
