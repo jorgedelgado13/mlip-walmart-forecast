@@ -1,12 +1,18 @@
+import sys
 from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+SRC_DIR = BASE_DIR / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.append(str(SRC_DIR))
+
 from flask import Flask, render_template_string, request
 import pandas as pd
 import json
 import joblib
 import base64
 from prometheus_flask_exporter import PrometheusMetrics
-
-BASE_DIR = Path(__file__).resolve().parent.parent
+from kafka_utils import get_kafka_producer, publish_event, build_inference_event
 
 DATA_PATH = BASE_DIR / "data" / "processed" / "walmart_processed.csv"
 TEST_FUTURE_PATH = BASE_DIR / "models" / "test_ml_split.csv"
@@ -24,6 +30,8 @@ PLOT_INVENTORY_PATH = BASE_DIR / "models" / "plot_inventory_kpis.png"
 app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 metrics.info("app_info", "Application info", version="1.0.0", app_name="mlip_walmart_forecast")
+
+kafka_producer = None
 
 EXOG_COLS = [
     "IsHoliday",
@@ -443,6 +451,18 @@ def home():
                 inventory_row[k] = round(v, 4)
 
     comparison_table, eval_summary, wape_plot, inventory_plot = load_evaluation_outputs()
+
+    global kafka_producer
+    if kafka_producer is None:
+        kafka_producer = get_kafka_producer()
+
+    event = build_inference_event(
+        selected_id=selected_id,
+        endpoint="/",
+        status="success",
+        model_name="LightGBM_quantile",
+    )
+    publish_event(kafka_producer, event)
 
     return render_template_string(
         HTML_TEMPLATE,

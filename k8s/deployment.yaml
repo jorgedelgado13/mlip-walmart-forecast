@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mlip-walmart-forecast-app
+  labels:
+    app: mlip-walmart-forecast-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mlip-walmart-forecast-app
+  template:
+    metadata:
+      labels:
+        app: mlip-walmart-forecast-app
+    spec:
+      containers:
+        - name: app
+          image: mlip-walmart-forecast-app:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: KAFKA_TOPIC
+              value: "forecast-events"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 20

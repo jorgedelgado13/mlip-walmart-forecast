@@ -6,6 +6,4 @@ __pycache__
 .gitignore
 wandb
 notebooks
-models
 data/raw
-data/processed
