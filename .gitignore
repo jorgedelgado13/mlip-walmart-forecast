@@ -4,6 +4,7 @@ __pycache__/
 .env
 .ipynb_checkpoints/
 wandb/
+tea_debug.log
 
 # Model artifacts and outputs
 models/*.pkl
