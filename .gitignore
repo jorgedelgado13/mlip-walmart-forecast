@@ -1,0 +1,24 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.ipynb_checkpoints/
+wandb/
+
+# Model artifacts and outputs
+models/*.pkl
+models/*.joblib
+models/*.csv
+models/*.png
+models/*.json
+
+# Data files
+data/raw/*.parquet
+data/raw/*.csv
+data/processed/*.parquet
+data/processed/*.csv
+
+# Editor / OS
+.vscode/
+Thumbs.db
+.DS_Store

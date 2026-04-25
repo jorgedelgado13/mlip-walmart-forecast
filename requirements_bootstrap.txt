@@ -1,0 +1,16 @@
+pandas
+numpy<2
+scikit-learn
+lightgbm
+statsforecast
+mlforecast
+matplotlib
+flask
+gunicorn
+wandb
+prometheus-flask-exporter
+kafka-python
+joblib
+pyarrow
+pymoo
+requests

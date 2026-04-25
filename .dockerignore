@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+.ipynb_checkpoints
+.git
+.gitignore
+wandb
+notebooks
+models
+data/raw
+data/processed
